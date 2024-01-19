@@ -1,6 +1,10 @@
 import streamlit as st
 from web_scraper import scrape_one_esports
 from collections import Counter, defaultdict
+import pandas as pd
+import time
+
+start = time.time()
 
 @st.cache_data
 def scraper():
@@ -10,11 +14,17 @@ def scraper():
             all_country_data[country] = scrape_one_esports(url)
     return all_country_data
 
-# Helper function to sort categories
-def sort_categories(data):
-    # Sort by total articles count and then by number of countries
-    return sorted(data, key=lambda x: (sum(data[x].values()), len(data[x])), reverse=True)
-
+def convert_to_dataframe(all_country_data):
+    data = []
+    for country, articles in all_country_data.items():
+        for article in articles:
+            data.append({
+                'country': country,
+                'author': article['author'],
+                'category': article['category'],
+                'title': article['title']  # assuming each article has a title
+            })
+    return pd.DataFrame(data)
 
 # Set the page config to wide mode for better visualization layout
 st.set_page_config(layout="wide")
@@ -34,7 +44,12 @@ st.title("ONE Esports Content Analysis Dashboard")
 # Comparative Analysis Across Countries
 st.header("Comparative Analysis Across Countries")
 all_country_data = scraper()
-
+end = time.time()
+with st.expander('Data Explorer'):
+    st.write(end - start) # time in seconds
+    master_df = convert_to_dataframe(all_country_data)
+    st.dataframe(master_df)
+    st.dataframe(master_df.describe(include='all'))
 # Article Count by Category Across Countries
 st.subheader("Article Count by Category Across Countries")
 category_data = {}

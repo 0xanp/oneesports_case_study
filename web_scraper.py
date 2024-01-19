@@ -1,7 +1,7 @@
 import requests
 from bs4 import BeautifulSoup
 
-def scrape_one_esports(base_url, max_pages=10):
+def scrape_one_esports(base_url, max_pages=25):
     news_data = []
 
     for page in range(1, max_pages + 1):
@@ -14,7 +14,6 @@ def scrape_one_esports(base_url, max_pages=10):
             headline = article.find('h2')
             category = article.find('a', class_='category')  # Adjust class as per the website
             author = article.find('a', class_='author')  # Adjust class as per the website
-            print(headline, category, author)
             if headline and category and author:
                 title = headline.get_text().strip()
                 category_text = category.get_text().strip()
