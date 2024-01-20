@@ -3,6 +3,8 @@ from web_scraper import scrape_one_esports
 from collections import Counter, defaultdict
 import pandas as pd
 import time
+import matplotlib.pyplot as plt
+from wordcloud import WordCloud
 
 start = time.time()
 
@@ -22,7 +24,8 @@ def convert_to_dataframe(all_country_data):
                 'country': country,
                 'author': article['author'],
                 'category': article['category'],
-                'title': article['title']  # assuming each article has a title
+                'title': article['title'],
+                'date_published': pd.to_datetime(article['date_published'], unit='s')
             })
     return pd.DataFrame(data)
 
@@ -41,15 +44,16 @@ urls = {
 # Streamlit UI
 st.title("ONE Esports Content Analysis Dashboard")
 
-# Comparative Analysis Across Countries
-st.header("Comparative Analysis Across Countries")
+# Load the master data
 all_country_data = scraper()
 end = time.time()
-with st.expander('Data Explorer'):
-    st.write(end - start) # time in seconds
-    master_df = convert_to_dataframe(all_country_data)
-    st.dataframe(master_df)
-    st.dataframe(master_df.describe(include='all'))
+
+st.write(end - start) # time in seconds
+data = convert_to_dataframe(all_country_data)
+st.write(data)
+st.write(data.describe(include='all'))
+# Comparative Analysis Across Countries
+st.header("Comparative Analysis Across Countries")
 # Article Count by Category Across Countries
 st.subheader("Article Count by Category Across Countries")
 category_data = {}
@@ -65,6 +69,28 @@ for country, articles in all_country_data.items():
     author_counts = Counter([article['author'] for article in articles])
     author_data[country] = author_counts
 st.bar_chart(author_data)
+
+# Convert 'date_published' to just date for easier grouping and set it as the index after sorting
+data['date'] = pd.to_datetime(data['date_published']).dt.date
+data.sort_values('date', inplace=True)
+data.set_index('date', inplace=True)
+
+# Function to plot line chart for articles over time by country
+st.header("Articles Over Time by Country")
+country_time_data = data.groupby(['country', data.index]).size().unstack(level=0, fill_value=0)
+st.line_chart(country_time_data)
+
+# Identify the top 10 authors by the number of articles
+top_authors = data['author'].value_counts().head(10).index.tolist()
+
+# Filter the data to include only the top 10 authors
+top_authors_data = data[data['author'].isin(top_authors)]
+
+# Line Chart for Articles Over Time by Author
+st.header("Articles Over Time by Top 10 Authors")
+author_time_data = top_authors_data.groupby(['author', 'date']).size().unstack(level=0, fill_value=0)
+st.line_chart(author_time_data)
+
 
 # Individual Country Analysis
 st.header("Individual Country Analysis")
@@ -93,3 +119,26 @@ if selected_country:
     category_author_chart_data = {category: category_author_counts[category] for category in sorted(category_author_counts)}
     st.bar_chart(category_author_chart_data)
 
+    # Article distribution by country
+    filtered_data = data[data['country'] == selected_country]
+    st.header("Article Distribution by Country")
+    country_count = filtered_data['country'].value_counts()
+    st.bar_chart(country_count)
+
+    # Articles over time
+    st.header("Articles Over Time")
+    articles_over_time = filtered_data.groupby(['country', filtered_data.index]).size().unstack(level=0, fill_value=0)
+    st.line_chart(articles_over_time)
+
+    # Top authors
+    st.header("Top Authors")
+    top_authors = filtered_data['author'].value_counts().head(10)
+    st.bar_chart(top_authors)
+
+    # Word Cloud
+    st.header("Word Cloud from Article Titles")
+    text = ' '.join(filtered_data['title'].dropna())
+    wordcloud = WordCloud(width=800, height=400, background_color ='white').generate(text)
+    plt.imshow(wordcloud, interpolation='bilinear')
+    plt.axis("off")
+    st.pyplot(plt)
