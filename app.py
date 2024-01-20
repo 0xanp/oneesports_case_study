@@ -5,6 +5,7 @@ import pandas as pd
 import time
 import matplotlib.pyplot as plt
 from wordcloud import WordCloud
+from datetime import datetime, timedelta
 
 start = time.time()
 
@@ -13,7 +14,7 @@ def scraper():
     all_country_data = {}
     for country, url in urls.items():
         with st.spinner(f'Fetching data from {country} website...'):
-            all_country_data[country] = scrape_one_esports(url)
+            all_country_data[country] = scrape_one_esports(url, datetime.now() - timedelta(days=365))
     return all_country_data
 
 def convert_to_dataframe(all_country_data):
