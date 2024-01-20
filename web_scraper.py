@@ -2,7 +2,7 @@ import requests
 from bs4 import BeautifulSoup
 from datetime import datetime
 
-def scrape_one_esports(base_url, max_pages=200):
+def scrape_one_esports(base_url, max_pages=150):
     news_data = []
 
     for page in range(0, max_pages + 1):
