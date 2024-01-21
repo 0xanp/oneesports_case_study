@@ -14,7 +14,7 @@ def scraper():
     all_country_data = {}
     for country, url in urls.items():
         with st.spinner(f'Fetching data from {country} website...'):
-            all_country_data[country] = scrape_one_esports(url, datetime.now() - timedelta(days=365))
+            all_country_data[country] = scrape_one_esports(url)
     return all_country_data
 
 def convert_to_dataframe(all_country_data):
@@ -51,6 +51,8 @@ end = time.time()
 
 st.write(end - start) # time in seconds
 data = convert_to_dataframe(all_country_data)
+data = data.drop_duplicates(subset=['title'])
+data = data[data['date_published']>(datetime.now() - timedelta(days=365))]
 st.write(data)
 st.write(data.describe(include='all'))
 # Comparative Analysis Across Countries

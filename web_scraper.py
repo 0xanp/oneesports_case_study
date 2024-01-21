@@ -1,7 +1,6 @@
 import requests
 from bs4 import BeautifulSoup
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from datetime import datetime
 
 def fetch_page_content(url):
     try:
@@ -12,11 +11,11 @@ def fetch_page_content(url):
         print(f"Error fetching {url}: {e}")
         return None
 
-def parse_page_content(html, cutoff_date):
+def parse_page_content(html):
     news_data = []
     soup = BeautifulSoup(html, 'html.parser')
-    articles = soup.find_all('article')
 
+    articles = soup.find_all('article')
     for article in articles:
         headline = article.find('h2')
         category = article.find('a', class_='category')
@@ -28,41 +27,26 @@ def parse_page_content(html, cutoff_date):
             category_text = category.get_text().strip()
             author_name = author.get_text().strip()
             date_published = date.get('data-publish-time').strip()
-
-            try:
-                # Assuming date_published is a Unix timestamp
-                date_published_dt = datetime.fromtimestamp(int(date_published))
-            except ValueError:
-                print(f"Unexpected date format: {date_published}")
-                continue
-
-            if date_published_dt < cutoff_date:
-                return news_data, False  # Return False to indicate cutoff
-
             news_data.append({
                 'title': title,
                 'category': category_text,
                 'author': author_name,
-                'date_published': date_published_dt.strftime("%Y-%m-%d")  # Formatting the date
+                'date_published': date_published
             })
 
-    return news_data, True  # Return True to indicate continuation
+    return news_data
 
-def scrape_one_esports(base_url, cutoff_date):
+def scrape_one_esports(base_url, max_pages=1000):
     all_news_data = []
-    page = 1
-    continue_scraping = True
+    urls = [f"{base_url}page/{page}/" for page in range(1, max_pages + 1)]
 
-    with ThreadPoolExecutor(max_workers=20) as executor:
-        while continue_scraping:
-            future_to_content = {executor.submit(fetch_page_content, f"{base_url}page/{page}/"): page}
-            for future in as_completed(future_to_content):
-                data = future.result()
-                if data:
-                    news_data, continue_scraping = parse_page_content(data, cutoff_date)
-                    all_news_data.extend(news_data)
-                if not continue_scraping:
-                    break
-            page += 1
+    with ThreadPoolExecutor(max_workers=1000) as executor:
+        # Start the load operations and mark each future with its URL
+        future_to_url = {executor.submit(fetch_page_content, url): url for url in urls}
+        for future in as_completed(future_to_url):
+            url = future_to_url[future]
+            data = future.result()
+            if data:
+                all_news_data.extend(parse_page_content(data))
 
     return all_news_data
