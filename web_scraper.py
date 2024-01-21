@@ -4,7 +4,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 
 def fetch_page_content(url):
     try:
-        response = requests.get(url, timeout=10)
+        response = requests.get(url, timeout=15)
         response.raise_for_status()
         return response.text
     except requests.RequestException as e:
@@ -36,11 +36,11 @@ def parse_page_content(html):
 
     return news_data
 
-def scrape_one_esports(base_url, max_pages=1000):
+def scrape_one_esports(base_url, max_pages=150):
     all_news_data = []
     urls = [f"{base_url}page/{page}/" for page in range(1, max_pages + 1)]
 
-    with ThreadPoolExecutor(max_workers=1000) as executor:
+    with ThreadPoolExecutor(max_workers=10) as executor:
         # Start the load operations and mark each future with its URL
         future_to_url = {executor.submit(fetch_page_content, url): url for url in urls}
         for future in as_completed(future_to_url):
