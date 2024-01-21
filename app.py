@@ -52,8 +52,7 @@ end = time.time()
 st.write(end - start) # time in seconds
 data = convert_to_dataframe(all_country_data)
 data = data.drop_duplicates(subset=['title'])
-date_filter = st.date_input("Date filter")
-data = data[data['date_published']>(date_filter)]
+data = data[data['date_published']>(datetime.now() - timedelta(days=60))]
 st.write(data)
 st.write(data.describe(include='all'))
 # Comparative Analysis Across Countries
