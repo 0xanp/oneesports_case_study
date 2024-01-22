@@ -50,11 +50,11 @@ all_country_data = scraper()
 end = time.time()
 
 st.write(end - start) # time in seconds
-all_country_data = convert_to_dataframe(all_country_data)
-all_country_data = all_country_data.drop_duplicates(subset=['title'])
-all_country_data = all_country_data[all_country_data['date_published']>(datetime.now() - timedelta(days=60))]
-st.write(all_country_data)
-st.write(all_country_data.describe(include='all'))
+data = convert_to_dataframe(all_country_data)
+data = data.drop_duplicates(subset=['title'])
+data = data[data['date_published']>(datetime.now() - timedelta(days=60))]
+st.write(data)
+st.write(data.describe(include='all'))
 # Comparative Analysis Across Countries
 st.header("Comparative Analysis Across Countries")
 # Article Count by Category Across Countries
